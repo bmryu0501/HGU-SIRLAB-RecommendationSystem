@@ -48,7 +48,7 @@ print("메시지를 전송했습니다.")
 data = local_sock.recv(1024)
 message = data.decode("utf-8")
 if message == "choice":
-    os.system("mpg321 choice.wav")
+    os.system("mpg321 {}".format("choice.wav"))
 
 '''
 4. Receive TID from Local

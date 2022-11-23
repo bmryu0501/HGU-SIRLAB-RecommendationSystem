@@ -7,7 +7,7 @@ not_question = [1, 4, 5, 6, 7, 8, 10, 12, 15, 16, 17, 19]
 dance_sentence = [5, 8]
 
 def talk(i):
-  wav_name = "play_scenario/play_" + str(i) + ".wav"
+  wav_name = "scenario/scenario4/play_" + str(i) + ".wav"
   
   os.system("mpg321 {}".format(wav_name))
   
