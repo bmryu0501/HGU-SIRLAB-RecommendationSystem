@@ -1,0 +1,28 @@
+incoming message format:
+    {
+        [0] command
+        [1] user_id
+
+        if command == 'recommend':
+            None.
+        elif command == 'update':
+            [2] category
+            if category == 'achievement':
+                [3] category_id
+                [4] task_id
+                [5] parent_score
+                [6] expert_score
+            elif category == 'engagement':
+                [3] category_id
+                [4] task_id
+                [5] engagment_score
+                [6] engagement_level
+    }
+
+    outgoing message format:
+    {
+        if command == 'recommend':
+            [0] TID recommend based on achievement
+            [1] TID recommend based on engagement
+        elif command == 'update':
+            [0] success or fail #TODO : success or fail implement in Pibo_recommender

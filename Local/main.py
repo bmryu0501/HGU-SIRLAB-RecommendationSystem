@@ -35,6 +35,12 @@ expert_score = None
 ### Engagement level ###
 engagement_level = None
 
+### socket info ###
+serv_ip = '13.209.85.23'
+serv_port = 8080
+robot_ip = '192.168.137.4'
+local_port = 2000
+
 # '''
 print('''\
 ##################
@@ -49,71 +55,74 @@ print('''\
 # 0. socket setting (robot, server)
 # '''
 # ### initialize serv sock
-# #IPv4 protocol, TCP type socket object
-# serv_socket = socket(socket.AF_INET, socket.SOCK_STREAM)
-# #to handle "Address already in use" error
-# serv_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+serv_ip = '13.209.85.23'
+sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+sock.connect((serv_ip, 8080))
 
 
-# ### open socket for robot
+### open socket for robot
+global local_socket
+local_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM) #IPv4 protocol, TCP type socket object
+#to handle "Address already in use" error
+local_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+
+### connect to robot
+#bind host and port
+local_socket.bind((robot_ip, local_port))
+robot_socket, addr = local_socket.accept()
+
+'''
+1. Receive UID and "start" signal from robot
+'''
+# receive message from robot
+message = robot_socket.recv(65535)
+
+if len(message) != 2:
+    print(f"[Error] Cannot store UID and signal. Received message is '{message}'.")
+    exit(-1)
+else:   
+    UID, signal = message
 
 
-# ### connect to robot
+"""
+2. Receive the result of recommendation(list of TIDs) from server
+"""
+# connect to server
+serv_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+serv_sock.connect((serv_ip, 8080))
 
-# '''
-# 1. Receive UID and "start" signal from robot
-# '''
-# # receive from robot
+### 2-1. send UID to server and request TID from server 
+# format: "recommend UID"
+message = "recommend " + str(UID) # local --> server
+# send
+serv_sock.send(message.encode())
 
-# # message parsing
-# message = message.split(' ')
-# recommendations = message
+### 2-2. receive PlayID from server and store it
+# recv message from server
+message = serv_sock.recv(65535)
+message = message.decode()
 
-# ### 2. receive UID with "start message" from robot and store it
-# if len(message) != 2:
-#     print(f"[Error] Cannot store UID and signal. Received message is '{message}'.")
-#     exit(-1)
-# else:   
-#     UID, signal = message
+# message parsing
+message = message.split(' ')
+recommendations = message # recommendations = [TID, TID ...]
 
+### 2-3. close serv socket 
+serv_sock.close()
 
-# """
-# 2. Receive the result of recommendation(list of TIDs) from server
-# """
-# # bind host and port
-# serv_socket.bind((host, port))
-# # server allows a maximum of 5 queued connections
-# serv_socket.listen(5)
-# client_socket, addr = serv_socket.accept()
-
-# ### 2-1. send UID to server and request TID from server 
-# # format: "recommend UID"
-# message = "recommend " + str(UID) # local --> server
-# # send
-
-# ### 2-2. receive PlayID from server and store it
-# # recv message from server
-# user = client_socket.recv(65535) # 65535는 뭐지?! # local <-- server
-# message = user.decode()
-
-# # message parsing
-# message = message.split(' ')
-# recommendations = message
-
-# ### 2-3. close serv socket 
-
-# """
-# 3. Request user to choice play 
-# """
-# message = "choice" # local --> robot
-# # 로봇에서 골라줄래~ 나옴
-# TID = input(f"Select Play among {recommendations}: ")
+"""
+3. Request user to choice play 
+"""
+message = "choice" # local --> robot
+robot_socket.send(message)
+TID = input(f"Select Play among {recommendations}: ")
 
 
-# """
-# 5. send PlayID to robot
-# """
-
+"""
+5. send PlayID to robot
+"""
+message = str(TID)
+robot_socket.send(message)
+print
 
 print('''\
 ##################
@@ -142,8 +151,9 @@ playing...
 """
 while not done:
     ###  2. Robot request "reply"    
-    # signal
     # recv message "reply" or "end"
+    message = robot_socket.recv(65535)
+    message = message.decode()
     if message == "reply":
         sr.reply(cap, q_num, audio_filename, answer_filename)
         q_num += 1
@@ -153,7 +163,10 @@ while not done:
     else:
         print(f"[Error] message is not 'record' or 'end'.\nmessage = '{message}'")
 
+
 print("Play Done!")
+robot_socket.close()
+
 
 print('''\
 ##################
@@ -204,10 +217,10 @@ print()
 '''
 2. send all the data to server
 '''
+serv_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+serv_sock.connect((serv_ip, 8080))
 
-'''
-3. socket close (robot, server)
-'''
+serv_sock.send(message.encode())
 
 
 print("Play is entirely end! Thank you.")
