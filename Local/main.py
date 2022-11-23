@@ -34,6 +34,7 @@ expert_score = None
 
 ### Engagement level ###
 engagement_level = None
+level_dict = {"VERYHIGH":100, "HIGH":75, "LOW":50, "VERYLOW":25}
 
 ### socket info ###
 serv_ip = '13.209.85.23'
@@ -46,16 +47,10 @@ print('''\
 ##################
 # Before Playing #
 ##################''')
-# '''
-# global serv_socket, robot_socket
-# host = ""; port = 5000
-
-
-# '''
-# 0. socket setting (robot, server)
-# '''
-# ### initialize serv sock
-serv_ip = '13.209.85.23'
+'''
+0. socket setting (robot, server)
+'''
+### initialize serv sock
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 sock.connect((serv_ip, 8080))
 
@@ -69,6 +64,7 @@ local_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 ### connect to robot
 #bind host and port
 local_socket.bind((robot_ip, local_port))
+local_socket.listen()
 robot_socket, addr = local_socket.accept()
 
 '''
@@ -122,7 +118,6 @@ TID = input(f"Select Play among {recommendations}: ")
 """
 message = str(TID)
 robot_socket.send(message)
-print
 
 print('''\
 ##################
@@ -166,7 +161,6 @@ while not done:
 
 print("Play Done!")
 robot_socket.close()
-
 
 print('''\
 ##################
@@ -220,7 +214,13 @@ print()
 serv_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 serv_sock.connect((serv_ip, 8080))
 
+# send data of evaluation
+message = "update achievement " + str(CID) + " " + str(TID) + " " + str(parent_score) + " " + str(expert_score)
+serv_sock.send(message.encode())
+# send data of engagement
+message = "update engagement " + str(CID) + " " + str(TID) + " " + str(engagement_score) + " " + str(level_dict[engagement_level])
 serv_sock.send(message.encode())
 
+serv_sock.close()
 
 print("Play is entirely end! Thank you.")
