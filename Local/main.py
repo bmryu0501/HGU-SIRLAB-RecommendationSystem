@@ -119,108 +119,108 @@ TID = input(f"Select Play among {recommendations}: ")
 message = str(TID)
 robot_socket.send(message)
 
-print('''\
-##################
-#### Playing #####
-##################''')
+# print('''\
+# ##################
+# #### Playing #####
+# ##################''')
 
-"""
-1. start FER thred
-"""
-cap = cv2.VideoCapture(0)
-time.sleep(2)
+# """
+# 1. start FER thred
+# """
+# cap = cv2.VideoCapture(0)
+# time.sleep(2)
 
-fer.model_init()
+# fer.model_init()
 
-main_fer_thread = threading.Thread(target=fer.fer_thread, args=(cap,), daemon=True)
-main_fer_thread.start()
-fer.start_timer()
+# main_fer_thread = threading.Thread(target=fer.fer_thread, args=(cap,), daemon=True)
+# main_fer_thread.start()
+# fer.start_timer()
 
-q_num = 0
-done = 0
+# q_num = 0
+# done = 0
 
-audio_filename = UID + "_audio"; answer_filename = UID + "_reply"
+# audio_filename = UID + "_audio"; answer_filename = UID + "_reply"
 
-"""
-playing...
-"""
-while not done:
-    ###  2. Robot request "reply"    
-    # recv message "reply" or "end"
-    message = robot_socket.recv(65535)
-    message = message.decode()
-    if message == "reply":
-        sr.reply(cap, q_num, audio_filename, answer_filename)
-        q_num += 1
-    ### 3. Receive "end" message from robot
-    elif message == "end":
-        done = 1
-    else:
-        print(f"[Error] message is not 'record' or 'end'.\nmessage = '{message}'")
+# """
+# playing...
+# """
+# while not done:
+#     ###  2. Robot request "reply"    
+#     # recv message "reply" or "end"
+#     message = robot_socket.recv(65535)
+#     message = message.decode()
+#     if message == "reply":
+#         sr.reply(cap, q_num, audio_filename, answer_filename)
+#         q_num += 1
+#     ### 3. Receive "end" message from robot
+#     elif message == "end":
+#         done = 1
+#     else:
+#         print(f"[Error] message is not 'record' or 'end'.\nmessage = '{message}'")
 
 
-print("Play Done!")
-robot_socket.close()
+# print("Play Done!")
+# robot_socket.close()
 
-print('''\
-##################
-# After Playing ##
-##################''')
+# print('''\
+# ##################
+# # After Playing ##
+# ##################''')
 
-'''
-join thread
-'''
-fer.end_timer()
-# main_fer_thread.join()
+# '''
+# join thread
+# '''
+# fer.end_timer()
+# # main_fer_thread.join()
 
-cap.release()
-cv2.destroyAllWindows()
+# cap.release()
+# cv2.destroyAllWindows()
 
-'''
-1. calculate scores and get engagement level
-'''
-# get results
-total_reply = sr.get_reply_list()
-total_eye_gaze = sr.get_eye_gaze_list()
-total_emotion_dict = fer.get_emotion_dict()
-print("total reply:", total_reply)
-print("total eye gaze:", total_eye_gaze)
-print("total emotion:", total_emotion_dict)
-print()
+# '''
+# 1. calculate scores and get engagement level
+# '''
+# # get results
+# total_reply = sr.get_reply_list()
+# total_eye_gaze = sr.get_eye_gaze_list()
+# total_emotion_dict = fer.get_emotion_dict()
+# print("total reply:", total_reply)
+# print("total eye gaze:", total_eye_gaze)
+# print("total emotion:", total_emotion_dict)
+# print()
 
-print("Calculate scores...")
-parent_score, expert_score = input("The evaluation score of parent and expert(0~100):")
-print("### Achievement ###")
-print("parent score:", parent_score)
-print("expert score:", expert_score)
-print()
+# print("Calculate scores...")
+# parent_score, expert_score = input("The evaluation score of parent and expert(0~100):")
+# print("### Achievement ###")
+# print("parent score:", parent_score)
+# print("expert score:", expert_score)
+# print()
 
-print("### Engagement ###")
-total_reply_score, total_eye_gaze_score, total_emotion_score, engagement_score = cal.calculate_total_score(0, UID, CID, TID, total_reply, total_eye_gaze, total_emotion_dict)
-print("total reply score:", total_reply_score)
-print("total eye gaze score:", total_eye_gaze_score)
-print("total emotion score:", total_emotion_score)
-print("--> engagement score:", engagement_score)
-print()
+# print("### Engagement ###")
+# total_reply_score, total_eye_gaze_score, total_emotion_score, engagement_score = cal.calculate_total_score(0, UID, CID, TID, total_reply, total_eye_gaze, total_emotion_dict)
+# print("total reply score:", total_reply_score)
+# print("total eye gaze score:", total_eye_gaze_score)
+# print("total emotion score:", total_emotion_score)
+# print("--> engagement score:", engagement_score)
+# print()
 
-print("ER model")
-engagement_level = ERmodel.get_level(engagement_score)
-print("engagement level:", engagement_level)
-print()
+# print("ER model")
+# engagement_level = ERmodel.get_level(engagement_score)
+# print("engagement level:", engagement_level)
+# print()
 
-'''
-2. send all the data to server
-'''
-serv_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-serv_sock.connect((serv_ip, 8080))
+# '''
+# 2. send all the data to server
+# '''
+# serv_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+# serv_sock.connect((serv_ip, 8080))
 
-# send data of evaluation
-message = "update achievement " + str(CID) + " " + str(TID) + " " + str(parent_score) + " " + str(expert_score)
-serv_sock.send(message.encode())
-# send data of engagement
-message = "update engagement " + str(CID) + " " + str(TID) + " " + str(engagement_score) + " " + str(level_dict[engagement_level])
-serv_sock.send(message.encode())
+# # send data of evaluation
+# message = "update achievement " + str(CID) + " " + str(TID) + " " + str(parent_score) + " " + str(expert_score)
+# serv_sock.send(message.encode())
+# # send data of engagement
+# message = "update engagement " + str(CID) + " " + str(TID) + " " + str(engagement_score) + " " + str(level_dict[engagement_level])
+# serv_sock.send(message.encode())
 
-serv_sock.close()
+# serv_sock.close()
 
-print("Play is entirely end! Thank you.")
+# print("Play is entirely end! Thank you.")
