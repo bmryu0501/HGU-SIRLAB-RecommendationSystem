@@ -7,15 +7,15 @@ import cv2 as cv
 #부모의 부모 디렉토리에서 main을 실행할 경우를 위해 부모 디렉토리 삽입
 #from Facial_Expression_Recognition.model import cnn
 #from Facial_Expression_Recognition.preprocess import preprocess
-from model import cnn
-import preprocess
+from FER.model import cnn
+import FER.preprocess as preprocess
 
 #classes = ['angry', 'disgust', 'fear', 'happy', 'neutral', 'sad', 'surprise']
 classes = ['frown', 'happy', 'neutral', 'surprise']
 
 #global state_time, state_num, state_emotion_list, emotion_dict
 global model, model_path, model_name
-model_path = "./pretrained/"
+model_path = "./FER/pretrained/"
 model_name = "pretrained_reduced_refined_fer_cnn3.pt"
 
 state_time = 5
@@ -31,8 +31,6 @@ timer
 def start_timer():
     global state_num, state_emotion_list, emotion_dict, play_end
 
-    print("state num: ", state_num)
-    
     if state_emotion_list != []:
         most_common_emotion = decide_emotion()
         

@@ -9,9 +9,9 @@ from SpeechRecognition import srFunc as sr
 from EyeGaze import eyegazeFunc as eyegaze
 import ERmodel
 import cal_scores as cal
-import makeFolder as mfd
+# import makeFolder as mfd
 
-from socket import socket
+from socket import *
 import cv2
 import playsound
 import threading
@@ -37,132 +37,142 @@ engagement_level = None
 level_dict = {"VERYHIGH":100, "HIGH":75, "LOW":50, "VERYLOW":25}
 
 ### socket info ###
-serv_ip = '13.209.85.23'
+serv_ip = "13.209.85.23"
 serv_port = 8080
-robot_ip = '192.168.137.4'
+local_ip = "192.168.137.92"
 local_port = 2000
 
 # '''
-print('''\
+print('''\\n
 ##################
 # Before Playing #
 ##################''')
 '''
 0. socket setting (robot, server)
 '''
-### initialize serv sock
-sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-sock.connect((serv_ip, 8080))
-
-
 ### open socket for robot
 global local_socket
-local_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM) #IPv4 protocol, TCP type socket object
+local_socket = socket(AF_INET, SOCK_STREAM) #IPv4 protocol, TCP type socket object
 #to handle "Address already in use" error
-local_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+local_socket.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
+print("Wait for connection with robot...")
 
 ### connect to robot
 #bind host and port
-local_socket.bind((robot_ip, local_port))
+local_socket.bind((local_ip, local_port))
 local_socket.listen()
 robot_socket, addr = local_socket.accept()
+print("Connect to Robot!")
 
 '''
 1. Receive UID and "start" signal from robot
 '''
 # receive message from robot
 message = robot_socket.recv(65535)
+message = message.decode()
+message = message.split(' ')
+
 
 if len(message) != 2:
-    print(f"[Error] Cannot store UID and signal. Received message is '{message}'.")
+    print(f"[Error] Cannot store UID and signal. Received message is {message}.")
     exit(-1)
 else:   
     UID, signal = message
+    print("Receive UID and 'start' signal from Robot.")
 
 
-"""
-2. Receive the result of recommendation(list of TIDs) from server
-"""
-# connect to server
-serv_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-serv_sock.connect((serv_ip, 8080))
+# """
+# 2. Receive the result of recommendation(list of TIDs) from server
+# """
+# # connect to server
+# serv_sock = socket(AF_INET, SOCK_STREAM)
+# serv_sock.connect((serv_ip, 8080))
+# print("\tConnect to Server")
 
-### 2-1. send UID to server and request TID from server 
-# format: "recommend UID"
-message = "recommend " + str(UID) # local --> server
-# send
-serv_sock.send(message.encode())
+# ### 2-1. send UID to server and request TID from server 
+# # format: "recommend UID"
+# message = "recommend " + str(UID) # local --> server
+# # send
+# serv_sock.send(message.encode())
+# print("\tSend message to Server to request recommend for user " + UID)
 
-### 2-2. receive PlayID from server and store it
-# recv message from server
-message = serv_sock.recv(65535)
-message = message.decode()
+# ### 2-2. receive PlayID from server and store it
+# # recv message from server
+# message = serv_sock.recv(65535)
+# message = message.decode('utf-8')
+# print(f"\tReceive recommendation: {message} from Server")
 
-# message parsing
-message = message.split(' ')
-recommendations = message # recommendations = [TID, TID ...]
+# # message parsing
+# message = message.split(' ')
+# recommendations = message # recommendations = [TID, TID ...]
 
-### 2-3. close serv socket 
-serv_sock.close()
+# ### 2-3. close serv socket 
+# serv_sock.close()
+# print("\tDisconnect server...")
 
 """
 3. Request user to choice play 
 """
 message = "choice" # local --> robot
-robot_socket.send(message)
+robot_socket.send(message.encode())
+recommendations = [4]
 TID = input(f"Select Play among {recommendations}: ")
+print("Send 'choice' signal to Robot.")
 
 
 """
 5. send PlayID to robot
 """
 message = str(TID)
-robot_socket.send(message)
+robot_socket.send(message.encode())
+print(f"Send TID({TID}) to Robot.")
+print('''\\n
+##################
+#### Playing #####
+##################''')
 
-# print('''\
-# ##################
-# #### Playing #####
-# ##################''')
+"""
+1. start FER thred
+"""
+cap = cv2.VideoCapture(0)
+time.sleep(2)
 
-# """
-# 1. start FER thred
-# """
-# cap = cv2.VideoCapture(0)
-# time.sleep(2)
+fer.model_init()
 
-# fer.model_init()
+main_fer_thread = threading.Thread(target=fer.fer_thread, args=(cap,), daemon=True)
+main_fer_thread.start()
+fer.start_timer()
 
-# main_fer_thread = threading.Thread(target=fer.fer_thread, args=(cap,), daemon=True)
-# main_fer_thread.start()
-# fer.start_timer()
+q_num = 0
+done = 0
 
-# q_num = 0
-# done = 0
+audio_filename = UID + "_audio"; answer_filename = UID + "_reply"
 
-# audio_filename = UID + "_audio"; answer_filename = UID + "_reply"
+"""
+playing...
+"""
+while not done:
+    ###  2. Robot request "q_num reply"    
+    # recv message "reply" or "end"
+    message = robot_socket.recv(65535)
+    message = message.decode()
+    message = message.split(' ')
 
-# """
-# playing...
-# """
-# while not done:
-#     ###  2. Robot request "reply"    
-#     # recv message "reply" or "end"
-#     message = robot_socket.recv(65535)
-#     message = message.decode()
-#     if message == "reply":
-#         sr.reply(cap, q_num, audio_filename, answer_filename)
-#         q_num += 1
-#     ### 3. Receive "end" message from robot
-#     elif message == "end":
-#         done = 1
-#     else:
-#         print(f"[Error] message is not 'record' or 'end'.\nmessage = '{message}'")
+    if len(message) == 2:
+        q_num = message[0]
+        sr.reply(cap, q_num, audio_filename, answer_filename)
+       
+    ### 3. Receive "end" message from robot
+    elif message[0] == "end":
+        done = 1
+    else:
+        print(f"[Error] message is not 'record' or 'end'.\nmessage = '{message}'")
 
 
 # print("Play Done!")
 # robot_socket.close()
 
-# print('''\
+# print('''\\n
 # ##################
 # # After Playing ##
 # ##################''')
