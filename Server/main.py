@@ -135,7 +135,7 @@ def accept_func(host, port):
     while True:
         try:
             # if client is connected, return new socket object and client's address
-            client_socket, addr = server_socket.accept()            
+            client_socket, addr = server_socket.accept()
         except KeyboardInterrupt:
             print("KeyboardInterrupt")
             break
@@ -149,7 +149,6 @@ def accept_func(host, port):
             args=(client_socket,)
         )
         client_handler.daemon = True
-        # print("client_handler.daemon:", client_handler.daemon)
         client_handler.start()
     
 
