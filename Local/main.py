@@ -81,34 +81,34 @@ else:
     print("Receive UID and 'start' signal from Robot.")
 
 
-# """
-# 2. Receive the result of recommendation(list of TIDs) from server
-# """
-# # connect to server
-# serv_sock = socket(AF_INET, SOCK_STREAM)
-# serv_sock.connect((serv_ip, 8080))
-# print("\tConnect to Server")
+"""
+2. Receive the result of recommendation(list of TIDs) from server
+"""
+# connect to server
+serv_sock = socket(AF_INET, SOCK_STREAM)
+serv_sock.connect((serv_ip, 8080))
+print("\tConnect to Server")
 
-# ### 2-1. send UID to server and request TID from server 
-# # format: "recommend UID"
-# message = "recommend " + str(UID) # local --> server
-# # send
-# serv_sock.send(message.encode())
-# print("\tSend message to Server to request recommend for user " + UID)
+### 2-1. send UID to server and request TID from server 
+# format: "recommend UID"
+message = "recommend " + str(UID) # local --> server
+# send
+serv_sock.send(message.encode())
+print("\tSend message to Server to request recommend for user " + UID)
 
-# ### 2-2. receive PlayID from server and store it
-# # recv message from server
-# message = serv_sock.recv(65535)
-# message = message.decode('utf-8')
-# print(f"\tReceive recommendation: {message} from Server")
+### 2-2. receive PlayID from server and store it
+# recv message from server
+message = serv_sock.recv(65535)
+message = message.decode('utf-8')
+print(f"\tReceive recommendation: {message} from Server")
 
-# # message parsing
-# message = message.split(' ')
-# recommendations = message # recommendations = [TID, TID ...]
+# message parsing
+message = message.split(' ')
+recommendations = message # recommendations = [TID, TID ...]
 
-# ### 2-3. close serv socket 
-# serv_sock.close()
-# print("\tDisconnect server...")
+### 2-3. close serv socket 
+serv_sock.close()
+print("\tDisconnect server...")
 
 """
 3. Request user to choice play 
@@ -169,68 +169,68 @@ while not done:
         print(f"[Error] message is not 'record' or 'end'.\nmessage = '{message}'")
 
 
-# print("Play Done!")
-# robot_socket.close()
+print("Play Done!")
+robot_socket.close()
 
-# print('''\\n
-# ##################
-# # After Playing ##
-# ##################''')
+print('''\\n
+##################
+# After Playing ##
+##################''')
 
-# '''
-# join thread
-# '''
-# fer.end_timer()
-# # main_fer_thread.join()
+'''
+join thread
+'''
+fer.end_timer()
+# main_fer_thread.join()
 
-# cap.release()
-# cv2.destroyAllWindows()
+cap.release()
+cv2.destroyAllWindows()
 
-# '''
-# 1. calculate scores and get engagement level
-# '''
-# # get results
-# total_reply = sr.get_reply_list()
-# total_eye_gaze = sr.get_eye_gaze_list()
-# total_emotion_dict = fer.get_emotion_dict()
-# print("total reply:", total_reply)
-# print("total eye gaze:", total_eye_gaze)
-# print("total emotion:", total_emotion_dict)
-# print()
+'''
+1. calculate scores and get engagement level
+'''
+# get results
+total_reply = sr.get_reply_list()
+total_eye_gaze = sr.get_eye_gaze_list()
+total_emotion_dict = fer.get_emotion_dict()
+print("total reply:", total_reply)
+print("total eye gaze:", total_eye_gaze)
+print("total emotion:", total_emotion_dict)
+print()
 
-# print("Calculate scores...")
-# parent_score, expert_score = input("The evaluation score of parent and expert(0~100):")
-# print("### Achievement ###")
-# print("parent score:", parent_score)
-# print("expert score:", expert_score)
-# print()
+print("Calculate scores...")
+parent_score, expert_score = input("The evaluation score of parent and expert(0~100):")
+print("### Achievement ###")
+print("parent score:", parent_score)
+print("expert score:", expert_score)
+print()
 
-# print("### Engagement ###")
-# total_reply_score, total_eye_gaze_score, total_emotion_score, engagement_score = cal.calculate_total_score(0, UID, CID, TID, total_reply, total_eye_gaze, total_emotion_dict)
-# print("total reply score:", total_reply_score)
-# print("total eye gaze score:", total_eye_gaze_score)
-# print("total emotion score:", total_emotion_score)
-# print("--> engagement score:", engagement_score)
-# print()
+print("### Engagement ###")
+total_reply_score, total_eye_gaze_score, total_emotion_score, engagement_score = cal.calculate_total_score(0, UID, CID, TID, total_reply, total_eye_gaze, total_emotion_dict)
+print("total reply score:", total_reply_score)
+print("total eye gaze score:", total_eye_gaze_score)
+print("total emotion score:", total_emotion_score)
+print("--> engagement score:", engagement_score)
+print()
 
-# print("ER model")
-# engagement_level = ERmodel.get_level(engagement_score)
-# print("engagement level:", engagement_level)
-# print()
+print("ER model")
+engagement_level = ERmodel.get_level(engagement_score)
+print("engagement level:", engagement_level)
+print()
 
-# '''
-# 2. send all the data to server
-# '''
-# serv_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-# serv_sock.connect((serv_ip, 8080))
+'''
+2. send all the data to server
+'''
+serv_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+serv_sock.connect((serv_ip, 8080))
 
-# # send data of evaluation
-# message = "update achievement " + str(CID) + " " + str(TID) + " " + str(parent_score) + " " + str(expert_score)
-# serv_sock.send(message.encode())
-# # send data of engagement
-# message = "update engagement " + str(CID) + " " + str(TID) + " " + str(engagement_score) + " " + str(level_dict[engagement_level])
-# serv_sock.send(message.encode())
+# send data of evaluation
+message = "update achievement " + str(CID) + " " + str(TID) + " " + str(parent_score) + " " + str(expert_score)
+serv_sock.send(message.encode())
+# send data of engagement
+message = "update engagement " + str(CID) + " " + str(TID) + " " + str(engagement_score) + " " + str(level_dict[engagement_level])
+serv_sock.send(message.encode())
 
-# serv_sock.close()
+serv_sock.close()
 
-# print("Play is entirely end! Thank you.")
+print("Play is entirely end! Thank you.")
