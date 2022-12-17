@@ -115,8 +115,8 @@ class recommend_SVD:
 
         Returns
         -------
-        float
-            Estimated achievement evaluation
+        int
+            ID of recommended task(s)
         '''
         # make ranking list of tasks for user_id from achievement_predicted table
         ranking_list = []
@@ -148,8 +148,8 @@ class recommend_SVD:
 
         Returns
         -------
-        float
-            Estimated engagement level
+        int
+            ID of recommended task(s)
         '''
         # make ranking list of tasks for user_id
         ranking_list = []
